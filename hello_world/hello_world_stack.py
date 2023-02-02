@@ -17,6 +17,9 @@ class HelloWorldStack(Stack):
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
+            # At the moment we wrote this example, the aws_lambda_python_alpha CDK constructor is in Alpha, o we use layer to make the example simpler
+            # See https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda_python_alpha/README.html
+            # Check all Powertools layers versions here: https://awslabs.github.io/aws-lambda-powertools-python/latest/#lambda-layer
             layer_version_arn=f"arn:aws:lambda:{self.region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:20"
         )
 
@@ -24,7 +27,7 @@ class HelloWorldStack(Stack):
             'sample-app-lambda',
             runtime=lambda_.Runtime.PYTHON_3_9,
             layers=[powertools_layer],
-            code = lambda_.Code.from_asset("./source_code/"),
+            code = lambda_.Code.from_asset("./lambda_function/"),
             handler="app.lambda_handler",
             memory_size=128,
             timeout=Duration.seconds(3),

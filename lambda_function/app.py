@@ -1,5 +1,3 @@
-import random
-from time import gmtime, strftime
 from aws_lambda_powertools.event_handler import APIGatewayRestResolver
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.logging import correlation_paths
@@ -11,35 +9,24 @@ from aws_lambda_powertools.metrics import MetricUnit
 app = APIGatewayRestResolver()
 tracer = Tracer()
 logger = Logger()
-metrics = Metrics()
+metrics = Metrics(namespace="Powertools")
 
 @app.get("/hello")
 @tracer.capture_method
 def hello():
-
-    random_number = random.randint(1,4)
     # adding custom metrics
+    # See: https://awslabs.github.io/aws-lambda-powertools-python/latest/core/metrics/
     metrics.add_metric(name="HelloWorldInvocations", unit=MetricUnit.Count, value=1)
 
-    # adding subgements, annotations and metadata
-    with tracer.provider.in_subsegment("## random_number") as subsegment:
-        subsegment.put_annotation(key="RandomNumber", value=random_number)
-        subsegment.put_metadata(key="date", value=strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    # structured log
+    # See: https://awslabs.github.io/aws-lambda-powertools-python/latest/core/logger/
+    logger.info("Hello world API - HTTP 200")
+    return {"message": "hello world"}
 
-    # Emulating an HTTP code response based on a random number.
-    if random_number < 9:
-        # structured log
-        logger.info("INFO LOG - The service is healthy - HTTP 200")
-        return {"status": "healthy"}, 200
-    else:
-        # structured log
-        logger.error("ERROR LOG - The service is unhealthy - HTTP 500")
-        return {"status": "unhealthy"}, 500
-
-# lambda_handler
-# Logging Lambda invocation
+# Enrich logging with contextual information from Lambda
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 # Adding tracer
+# See: https://awslabs.github.io/aws-lambda-powertools-python/latest/core/tracer/
 @tracer.capture_lambda_handler
 # ensures metrics are flushed upon request completion/failure and capturing ColdStart metric
 @metrics.log_metrics(capture_cold_start_metric=True)
